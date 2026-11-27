@@ -1,0 +1,19 @@
+# Python virtual environments
+venv/
+.venv/
+node_modules/
+dist/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Environment variables and secrets
+.env
+
+# Generated temporary files
+*.log
+
+# Generated uploads and processing results
+processing-engine/data/uploads/*
+processing-engine/data/output/*

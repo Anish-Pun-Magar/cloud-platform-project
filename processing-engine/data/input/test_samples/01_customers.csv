@@ -1,0 +1,7 @@
+Customer ID,Full Name,Email,Phone,Age,City,Active
+101,  Asha Rai ,ASHA.RAI@example.com,+977 980-123-4567,24,Kathmandu,yes
+102,Min Park,min.park@example.kr,010-1234-5678,29,Seoul,Y
+103,Leo Smith,leo.smith@example.com,+1 (415) 555-0134,34,San Francisco,true
+104,Nora Khan,nora.khan@example.org,981 222 3333,31,Delhi,1
+105,Missing Email,,+44 20 7946 0958,27,London,no
+105,Missing Email,,+44 20 7946 0958,27,London,no

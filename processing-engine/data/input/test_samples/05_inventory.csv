@@ -1,0 +1,7 @@
+Item Code,Item Name,Category,Quantity,Price,In Stock
+A-100,USB Cable,Accessories,120,"$1,200",yes
+A-101,Notebook,Stationery,45,$3.50,Y
+A-102,Desk Lamp,Home,18,$24.99,true
+A-103,Monitor Stand,Accessories,12,$39.95,no
+A-104,Pen Set,Stationery,0,$5.25,N
+A-105,Wireless Mouse,Electronics,999,$19.99,1
