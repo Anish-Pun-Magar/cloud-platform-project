@@ -74,6 +74,8 @@ Each processed dataset creates:
 - `train.csv`, `validation.csv`, and `test.csv`: deterministic data splits.
 - `schema.json`, `metadata.json`, and `preprocessing_report.json`: dataset details and processing summary.
 
+Phone numbers stay as text in `cleaned.csv`. When opening that CSV in Excel, import the phone column as **Text** to keep leading zeros and international prefixes visible.
+
 More detail about the cleaner is in [docs/data-processing.md](docs/data-processing.md).
 
 ## Checks

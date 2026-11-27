@@ -24,7 +24,7 @@ The dashboard continues to call the processor automatically when a CSV is upload
 - Tidies column names and surrounding or repeated spaces; treats `N/A`, `null`, and `-` as blank.
 - Converts recognizable numbers, dates, and yes/no values. It parses currency and percentages.
 - Checks email and phone formats, age from 0 to 120, and non-negative prices.
-- Flags IQR outliers and local/shared phone numbers for review. It does not guess a phone country code.
+- Lists IQR outliers and local/shared phone numbers in the quality report. It does not guess a phone country code.
 - Saves invalid and duplicate rows to `rejected_rows.csv` with a reason. Other issues appear in `data_quality_issues.csv`.
 - Writes cleaned data, train/validation/test splits, and a short report.
 

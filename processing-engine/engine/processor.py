@@ -1,3 +1,5 @@
+"""Basic CSV cleaning used by both the dashboard and the command line."""
+
 import argparse
 import csv
 import json
@@ -114,7 +116,10 @@ def clean_data(data, key=None):
         elif kind == "phone":
             valid = raw.str.fullmatch(PHONE, na=False) & raw.str.count(r"\d").between(7, 15)
             bad = raw.notna() & ~valid
-            data[column] = raw.map(lambda value: re.sub(r"[^\d+]", "", value) if not pd.isna(value) else pd.NA)
+            cleaned = raw.map(lambda value: re.sub(r"[^\d+]", "", value) if not pd.isna(value) else pd.NA)
+            for row in data.index[raw.notna() & valid & ~raw.str.startswith("+", na=False)]:
+                issues.append({"row_number": row + 2, "column": column, "issue": "local_phone_no_country_code"})
+            data[column] = cleaned.astype("string")
         elif kind == "number":
             values = raw.map(number).astype("Float64")
             bad = raw.notna() & values.isna()
@@ -126,6 +131,8 @@ def clean_data(data, key=None):
                 range_error = pd.Series(False, index=data.index)
             bad |= range_error
             data[column] = values
+            if values.dropna().map(float.is_integer).all():
+                data[column] = values.astype("Int64")
             for row in data.index[range_error]:
                 reasons.loc[row] += f"{column} outside allowed range; "
         elif kind == "bool":
@@ -141,13 +148,12 @@ def clean_data(data, key=None):
         for row in data.index[bad]:
             reasons.loc[row] += f"invalid {kind} in {column}; "
 
-    # Flag unusually high or low numeric values with the standard IQR rule.
+    # Record unusually high or low numeric values using the standard IQR rule.
     for column in data.select_dtypes(include="number"):
         values = pd.to_numeric(data[column], errors="coerce").where(~invalid)
         q1, q3 = values.quantile([.25, .75])
         spread = q3 - q1
         flagged = values.notna() & ((values < q1 - 1.5 * spread) | (values > q3 + 1.5 * spread)) if pd.notna(spread) else False
-        data[f"{column}_is_outlier"] = flagged
         for row in data.index[flagged]:
             issues.append({"row_number": row + 2, "column": column, "issue": "numeric_outlier"})
 
@@ -158,15 +164,11 @@ def clean_data(data, key=None):
 
     phone = next((column for column in data if column in {"phone", "phone_number", "mobile", "mobile_number", "telephone"}), None)
     name = next((column for column in data if column in {"name", "full_name", "customer_name"}), None)
-    if phone:
-        data["phone_needs_country_code"] = data[phone].notna() & ~data[phone].astype("string").str.startswith("+", na=False)
-        data["has_shared_phone_conflict"] = False
-        if name:
-            for _, group in data[data[phone].notna()].groupby(phone):
-                if group[name].dropna().astype(str).str.casefold().nunique() > 1:
-                    data.loc[group.index, "has_shared_phone_conflict"] = True
-                    for row in group.index:
-                        issues.append({"row_number": row + 2, "column": phone, "issue": "shared_phone_number"})
+    if phone and name:
+        for phone_value, group in data[data[phone].notna()].groupby(phone):
+            if group[name].dropna().astype(str).str.casefold().nunique() > 1:
+                for row in group.index:
+                    issues.append({"row_number": row + 2, "column": phone, "issue": "shared_phone_number"})
 
     subset = [clean_column_name(item) for item in key.split(",")] if key else None
     if subset and not set(subset).issubset(data.columns):

@@ -19,7 +19,7 @@ class BasicProcessorTests(unittest.TestCase):
 
     def test_encoding_delimiter_and_basic_cleaning(self):
         source = self.root / "input.csv"
-        source.write_bytes("Full Name;Age;Price;Joined Date;Active;Email;City\n Ana  Lee ;25;$1,200;Jan 7 2026;Y;ANA@example.com;서울\nBad;140;$-2;bad-date;maybe;bad-email;부산\n".encode("cp949"))
+        source.write_bytes("Full Name;Age;Price;Joined Date;Active;Email;Phone;City\n Ana  Lee ;25;$1,200;Jan 7 2026;Y;ANA@example.com;+977 980-123-4567;서울\nBad;140;$-2;bad-date;maybe;bad-email;invalid;부산\n".encode("cp949"))
         raw, encoding, delimiter = processor.read_csv(source)
         clean, issues, rejected, report = processor.clean_data(raw)
         self.assertEqual((encoding, delimiter), ("cp949", ";"))
@@ -28,6 +28,8 @@ class BasicProcessorTests(unittest.TestCase):
         self.assertEqual(clean.loc[0, "joined_date"], "2026-01-07")
         self.assertEqual(clean.loc[0, "active"], True)
         self.assertEqual(clean.loc[0, "email"], "ana@example.com")
+        self.assertEqual(str(clean["age"].dtype), "Int64")
+        self.assertEqual(clean.loc[0, "phone"], "+9779801234567")
         self.assertEqual(len(rejected), 1)
         self.assertIn("age", rejected.loc[0, "rejection_reason"])
         self.assertEqual(report["rows_before"], 2)
@@ -42,15 +44,16 @@ class BasicProcessorTests(unittest.TestCase):
             _, found_encoding, found_separator = processor.read_csv(path)
             self.assertEqual((found_encoding, found_separator), (encoding, separator))
 
-    def test_duplicate_key_and_phone_flags(self):
+    def test_duplicate_key_and_phone_review_goes_to_report(self):
         data = pd.DataFrame({"ID": ["1", "1", "2"], "Name": ["Ana", "Ana", "Bea"],
                              "Phone": ["010-1234-5678", "010 1234 5678", "01012345678"]})
         clean, issues, rejected, report = processor.clean_data(data, key="id")
         self.assertEqual(len(clean), 2)
         self.assertEqual(len(rejected), 1)
-        self.assertTrue(clean["phone_needs_country_code"].all())
-        self.assertTrue(clean["has_shared_phone_conflict"].all())
         self.assertIn("shared_phone_number", set(issues["issue"]))
+        self.assertIn("local_phone_no_country_code", set(issues["issue"]))
+        self.assertNotIn("phone_needs_country_code", clean.columns)
+        self.assertNotIn("has_shared_phone_conflict", clean.columns)
         self.assertEqual(report["duplicate_records_removed"], 1)
 
     def test_dashboard_outputs_and_batch_cli_contract(self):
